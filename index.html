@@ -61,17 +61,20 @@
   .kopuk .nokta{background:var(--kirmizi)}
   .kopuk{color:var(--kirmizi)}
   .fp{margin-top:8px;padding:0}
-  .fp-ust{display:flex;justify-content:space-between;align-items:center;
-          gap:10px;flex-wrap:wrap;padding:14px 16px 10px}
-  .fp-kur{font-size:15px;font-variant-numeric:tabular-nums}
-  .fp-kur b{color:var(--sari);font-weight:700}
+  .fp-ust{padding:12px 16px 8px;display:flex;flex-direction:column;gap:8px}
+  .fp-satir{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .fp-kur{display:flex;align-items:center;gap:7px;font-size:14px;
+          font-variant-numeric:tabular-nums}
+  .fp-kur svg{width:17px;height:17px;flex:none;display:block}
+  .fp-kur b{font-weight:700}
+  .fp-kur.k-USDTTRY b{color:var(--usdt-renk)}
+  .fp-kur.k-TRXTRY b{color:var(--trx-renk)}
   .fp-ayar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--soluk)}
   .fp-ayar input{width:62px;background:var(--bg);color:var(--yazi);
     border:1px solid var(--cizgi);border-radius:7px;padding:5px 7px;
     font:inherit;font-size:12px;text-align:right}
   .fp table{border-radius:0}
   .fp td.fp-usdt{color:var(--usdt-renk)}
-  .fp td.fp-fark{color:var(--yesil);font-size:14px}
   .fp-not{font-size:11px;color:var(--soluk);padding:10px 16px 14px;line-height:1.5;margin:0}
 </style>
 </head>
@@ -88,20 +91,14 @@
 
   <h2>FULGURPAY (YAKLASIK)</h2>
   <div class="kart fp">
-    <div class="fp-ust">
-      <div class="fp-kur">1 USDT = <b id="fp-kur">--</b> &#8378;</div>
-      <label class="fp-ayar">Binance ustu fark %
-        <input id="fp-prim" type="number" step="0.01" min="-5" max="10" value="0.26">
-      </label>
-    </div>
+    <div class="fp-ust" id="fp-ust"></div>
     <table>
-      <thead><tr>
-        <th>Bakiye</th><th>Yatirilacak USDT</th><th>Avantaj</th>
-      </tr></thead>
+      <thead><tr id="fp-baslik"><th>Bakiye</th></tr></thead>
       <tbody id="fp-govde"></tbody>
     </table>
-    <p class="fp-not">Binance fiyatinin uzerine yukaridaki yuzde eklenerek hesaplanir.
-      Sitede gordugun kur degisirse yuzdeyi guncelle. Ag ucreti dahil degildir.</p>
+    <p class="fp-not">Binance fiyatinin uzerine her parite icin girdigin yuzde
+      eklenerek hesaplanir. Sitede gordugun kur degisirse yuzdeyi guncelle.
+      Ag ucreti dahil degildir.</p>
   </div>
 
   <div class="alt">
@@ -142,42 +139,53 @@ document.getElementById("govde").innerHTML = TUTARLAR.map(t => `
   </tr>`).join("");
 
 // --- FulgurPay bolumu ---
-const fpPrimKutu = document.getElementById("fp-prim");
+const fpKutular = {};
+const sonFiyat = {};
 
-function fpPrimOku(){
-  try{
-    const v = localStorage.getItem("fp_prim");
-    if(v !== null && v !== "") return parseFloat(v);
-  }catch(e){}
-  return FP_VARSAYILAN;
-}
-function fpPrimYaz(v){
-  try{ localStorage.setItem("fp_prim", String(v)); }catch(e){}
-}
+document.getElementById("fp-ust").innerHTML = PARITELER.map(p => `
+  <div class="fp-satir">
+    <div class="fp-kur k-${p.sembol}">${p.logo}
+      <span>1 ${p.ad} = <b id="fp-kur-${p.sembol}">--</b> &#8378;</span>
+    </div>
+    <label class="fp-ayar">fark %
+      <input id="fp-prim-${p.sembol}" type="number" step="0.01" min="-5" max="10">
+    </label>
+  </div>`).join("");
 
-fpPrimKutu.value = fpPrimOku();
-fpPrimKutu.addEventListener("input", () => {
-  const v = parseFloat(fpPrimKutu.value);
-  if(!isNaN(v)){ fpPrimYaz(v); fpCiz(); }
-});
+document.getElementById("fp-baslik").insertAdjacentHTML("beforeend",
+  PARITELER.map(p => `<th>${p.ad}</th>`).join(""));
 
 document.getElementById("fp-govde").innerHTML = TUTARLAR.map(t => `
   <tr>
     <td>${bicim(t,0)} &#8378;</td>
-    <td class="fp-usdt" id="fp-u-${t}">--</td>
-    <td class="fp-fark" id="fp-f-${t}">--</td>
+    ${PARITELER.map(p => `<td class="d-${p.sembol}" id="fp-${p.sembol}-${t}">--</td>`).join("")}
   </tr>`).join("");
 
-let sonUsdtFiyat = null;
+for(const p of PARITELER){
+  const kutu = document.getElementById("fp-prim-" + p.sembol);
+  let baslangic = FP_VARSAYILAN;
+  try{
+    const v = localStorage.getItem("fp_prim_" + p.sembol);
+    if(v !== null && v !== "") baslangic = parseFloat(v);
+  }catch(e){}
+  kutu.value = baslangic;
+  kutu.addEventListener("input", () => {
+    try{ localStorage.setItem("fp_prim_" + p.sembol, kutu.value); }catch(e){}
+    fpCiz();
+  });
+  fpKutular[p.sembol] = kutu;
+}
 
 function fpCiz(){
-  if(sonUsdtFiyat === null) return;
-  const k = (parseFloat(fpPrimKutu.value) || 0) / 100;
-  const kur = sonUsdtFiyat * (1 + k);
-  document.getElementById("fp-kur").textContent = bicim(kur, 4);
-  for(const t of TUTARLAR){
-    document.getElementById(`fp-u-${t}`).textContent = bicim(t / kur, 2);
-    document.getElementById(`fp-f-${t}`).textContent = "+" + bicim(t * k / (1 + k), 0) + " ₺";
+  for(const p of PARITELER){
+    const fiyat = sonFiyat[p.sembol];
+    if(fiyat === undefined) continue;
+    const k = (parseFloat(fpKutular[p.sembol].value) || 0) / 100;
+    const kur = fiyat * (1 + k);
+    document.getElementById("fp-kur-" + p.sembol).textContent = bicim(kur, Math.min(p.basamak + 2, 4));
+    for(const t of TUTARLAR){
+      document.getElementById(`fp-${p.sembol}-${t}`).textContent = bicim(t / kur, 2);
+    }
   }
 }
 
@@ -210,10 +218,8 @@ function ciz(d){
     document.getElementById(`t-${p.sembol}-${t}`).textContent = bicim(t / fiyat, 2);
   }
 
-  if(p.sembol === "USDTTRY"){
-    sonUsdtFiyat = fiyat;
-    fpCiz();
-  }
+  sonFiyat[p.sembol] = fiyat;
+  fpCiz();
 }
 
 function durum(ok){
