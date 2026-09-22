@@ -16,6 +16,7 @@
     --bg:#12151c; --kart:#1b202b; --cizgi:#262c3a;
     --yazi:#e8eaf0; --soluk:#8b93a7;
     --yesil:#2ecc71; --kirmizi:#ff5c5c; --sari:#f5c24a;
+    --usdt-renk:#2ecc71; --trx-renk:#ff5c5c;
     color-scheme:dark;
   }
   *{box-sizing:border-box}
@@ -48,8 +49,10 @@
   th .bslk svg{width:16px;height:16px;flex:none;display:block}
   td{padding:12px 16px;border-top:1px solid var(--cizgi);font-variant-numeric:tabular-nums}
   td:first-child{font-size:15px;white-space:nowrap}
-  td:not(:first-child){text-align:right;font-size:16px;font-weight:700;color:var(--sari);
+  td:not(:first-child){text-align:right;font-size:16px;font-weight:700;
     font-family:ui-monospace,Consolas,"SF Mono",monospace}
+  td.d-USDTTRY{color:var(--usdt-renk)}
+  td.d-TRXTRY{color:var(--trx-renk)}
   tbody tr:first-child td{border-top:none}
   .alt{display:flex;justify-content:space-between;align-items:center;
        gap:12px;margin-top:14px;font-size:12px;color:var(--soluk)}
@@ -102,7 +105,7 @@ document.getElementById("baslik").insertAdjacentHTML("beforeend",
 document.getElementById("govde").innerHTML = TUTARLAR.map(t => `
   <tr>
     <td>${bicim(t,0)} &#8378;</td>
-    ${PARITELER.map(p => `<td id="t-${p.sembol}-${t}">--</td>`).join("")}
+    ${PARITELER.map(p => `<td class="d-${p.sembol}" id="t-${p.sembol}-${t}">--</td>`).join("")}
   </tr>`).join("");
 
 const URL_24 = "https://api.binance.com/api/v3/ticker/24hr?symbols="
