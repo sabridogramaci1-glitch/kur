@@ -60,6 +60,28 @@
          background:var(--yesil);margin-right:6px;vertical-align:middle}
   .kopuk .nokta{background:var(--kirmizi)}
   .kopuk{color:var(--kirmizi)}
+  .hm{padding:14px 16px 16px;margin-top:8px}
+  .hm-giris{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .hm-giris input{flex:1 1 140px;min-width:0;background:var(--bg);color:var(--yazi);
+    border:1px solid var(--cizgi);border-radius:10px;padding:11px 13px;
+    font:inherit;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hm-giris input:focus{outline:2px solid var(--soluk);outline-offset:1px}
+  .hm-birimler{display:flex;gap:6px}
+  .hm-birimler button{background:var(--bg);color:var(--soluk);border:1px solid var(--cizgi);
+    border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;font-weight:600;
+    cursor:pointer;display:flex;align-items:center;gap:5px}
+  .hm-birimler button svg{width:15px;height:15px;display:block}
+  .hm-birimler button.secili{color:var(--yazi);border-color:var(--soluk);background:var(--cizgi)}
+  .hm-sonuc{margin-top:14px;display:flex;flex-direction:column;gap:1px}
+  .hm-satir{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:9px 0;border-top:1px solid var(--cizgi)}
+  .hm-satir:first-child{border-top:none}
+  .hm-etiket{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--soluk)}
+  .hm-etiket svg{width:16px;height:16px;flex:none;display:block}
+  .hm-deger{font-family:ui-monospace,Consolas,"SF Mono",monospace;
+    font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hm-fp .hm-deger{font-size:15px}
+  .hm-bos{font-size:12px;color:var(--soluk);margin-top:12px}
   .fp{margin-top:8px;padding:0}
   .fp-ust{padding:12px 16px 8px;display:flex;flex-direction:column;gap:8px}
   .fp-satir{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -82,6 +104,15 @@
 <div class="sar">
   <h1>USDT &amp; TRX / TRY &nbsp;·&nbsp; BINANCE</h1>
   <div class="kartlar" id="kartlar"></div>
+
+  <h2>HESAP MAKINESI</h2>
+  <div class="kart hm">
+    <div class="hm-giris">
+      <input id="hm-tutar" type="number" inputmode="decimal" step="any" min="0" placeholder="0">
+      <div class="hm-birimler" id="hm-birimler"></div>
+    </div>
+    <div class="hm-sonuc" id="hm-sonuc"></div>
+  </div>
 
   <h2>TL KARSILIGI</h2>
   <table>
@@ -173,6 +204,7 @@ for(const p of PARITELER){
   kutu.addEventListener("input", () => {
     try{ localStorage.setItem("fp_prim_" + p.sembol, kutu.value); }catch(e){}
     fpCiz();
+    hmCiz();
   });
   fpKutular[p.sembol] = kutu;
 }
@@ -235,11 +267,92 @@ async function getir(){
     const c = await fetch(URL_24, {cache:"no-store"});
     if(!c.ok) throw new Error(c.status);
     (await c.json()).forEach(ciz);
+    hmCiz();
     durum(true);
   }catch(e){
     durum(false);
   }
 }
+
+// --- hesap makinesi ---
+const TL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+  + '<circle cx="12" cy="12" r="12" fill="#3d4557"/>'
+  + '<text x="12" y="17.5" font-family="Segoe UI,system-ui,sans-serif" font-size="15"'
+  + ' font-weight="700" fill="#e8eaf0" text-anchor="middle">₺</text></svg>';
+
+const hmTutar = document.getElementById("hm-tutar");
+const hmSonuc = document.getElementById("hm-sonuc");
+let hmBirim = "TRY";
+
+const HM_BIRIMLER = [{kod:"TRY", ad:"₺", logo:TL_SVG}].concat(
+  PARITELER.map(p => ({kod:p.sembol, ad:p.ad, logo:p.logo})));
+
+document.getElementById("hm-birimler").innerHTML = HM_BIRIMLER.map(b =>
+  `<button type="button" data-kod="${b.kod}">${b.logo}<span>${b.ad}</span></button>`).join("");
+
+document.querySelectorAll("#hm-birimler button").forEach(d => {
+  d.addEventListener("click", () => {
+    hmBirim = d.dataset.kod;
+    hmBirimleriBoya();
+    hmCiz();
+  });
+});
+
+function hmBirimleriBoya(){
+  document.querySelectorAll("#hm-birimler button").forEach(d =>
+    d.classList.toggle("secili", d.dataset.kod === hmBirim));
+}
+hmBirimleriBoya();
+
+hmTutar.addEventListener("input", hmCiz);
+
+function fpKur(sembol){
+  const fiyat = sonFiyat[sembol];
+  if(fiyat === undefined) return null;
+  const k = (parseFloat(fpKutular[sembol].value) || 0) / 100;
+  return fiyat * (1 + k);
+}
+
+function hmSatir(logo, etiket, deger, ekSinif){
+  return `<div class="hm-satir ${ekSinif || ""}">
+    <span class="hm-etiket">${logo}<span>${etiket}</span></span>
+    <span class="hm-deger">${deger}</span>
+  </div>`;
+}
+
+function hmCiz(){
+  const v = parseFloat(hmTutar.value);
+  const pU = sonFiyat["USDTTRY"], pT = sonFiyat["TRXTRY"];
+
+  if(isNaN(v) || v <= 0 || pU === undefined || pT === undefined){
+    hmSonuc.innerHTML = '<p class="hm-bos">Tutar yaz, karsiligi aninda cikar.</p>';
+    return;
+  }
+
+  const usdt = PARITELER[0], trx = PARITELER[1];
+  const satirlar = [];
+
+  if(hmBirim === "TRY"){
+    satirlar.push(hmSatir(usdt.logo, "USDT", bicim(v / pU, 2)));
+    satirlar.push(hmSatir(trx.logo, "TRX", bicim(v / pT, 2)));
+    satirlar.push(hmSatir(usdt.logo, "FulgurPay USDT", bicim(v / fpKur("USDTTRY"), 2), "hm-fp"));
+    satirlar.push(hmSatir(trx.logo, "FulgurPay TRX", bicim(v / fpKur("TRXTRY"), 2), "hm-fp"));
+  } else if(hmBirim === "USDTTRY"){
+    satirlar.push(hmSatir(TL_SVG, "Tutar", bicim(v * pU, 2) + " ₺"));
+    satirlar.push(hmSatir(trx.logo, "TRX", bicim(v * pU / pT, 2)));
+    satirlar.push(hmSatir(TL_SVG, "FulgurPay bakiye",
+      bicim(v * fpKur("USDTTRY"), 2) + " ₺", "hm-fp"));
+  } else {
+    satirlar.push(hmSatir(TL_SVG, "Tutar", bicim(v * pT, 2) + " ₺"));
+    satirlar.push(hmSatir(usdt.logo, "USDT", bicim(v * pT / pU, 2)));
+    satirlar.push(hmSatir(TL_SVG, "FulgurPay bakiye",
+      bicim(v * fpKur("TRXTRY"), 2) + " ₺", "hm-fp"));
+  }
+
+  hmSonuc.innerHTML = satirlar.join("");
+}
+
+hmCiz();
 
 let zamanlayici = null;
 function basla(){
