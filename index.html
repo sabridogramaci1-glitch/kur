@@ -154,7 +154,7 @@ document.getElementById("fp-ust").innerHTML = PARITELER.map(p => `
   </div>`).join("");
 
 document.getElementById("fp-baslik").insertAdjacentHTML("beforeend",
-  PARITELER.map(p => `<th>${p.ad}</th>`).join(""));
+  PARITELER.map(p => `<th><span class="bslk">${p.logo}<span>${p.ad}</span></span></th>`).join(""));
 
 document.getElementById("fp-govde").innerHTML = TUTARLAR.map(t => `
   <tr>
