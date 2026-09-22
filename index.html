@@ -31,7 +31,9 @@
   .kartlar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:560px){.kartlar{grid-template-columns:1fr;gap:10px}}
   .kart{background:var(--kart);border-radius:16px;padding:14px 16px}
-  .ad{font-size:12px;font-weight:600;color:var(--soluk);letter-spacing:.04em}
+  .ad{font-size:12px;font-weight:600;color:var(--soluk);letter-spacing:.04em;
+       display:flex;align-items:center;gap:7px}
+  .ad svg{width:19px;height:19px;flex:none;display:block}
   .fiyat{font-size:38px;font-weight:700;line-height:1.1;margin:2px 0 0;
          font-variant-numeric:tabular-nums;transition:color .2s}
   .degisim{font-size:14px;font-weight:600;margin-top:2px}
@@ -42,6 +44,8 @@
         border-radius:16px;overflow:hidden}
   th{font-size:11px;color:var(--soluk);font-weight:600;text-align:right;padding:12px 16px 6px}
   th:first-child{text-align:left}
+  th .bslk{display:inline-flex;align-items:center;gap:6px}
+  th .bslk svg{width:16px;height:16px;flex:none;display:block}
   td{padding:12px 16px;border-top:1px solid var(--cizgi);font-variant-numeric:tabular-nums}
   td:first-child{font-size:15px;white-space:nowrap}
   td:not(:first-child){text-align:right;font-size:16px;font-weight:700;color:var(--sari);
@@ -74,8 +78,8 @@
 
 <script>
 const PARITELER = [
-  {sembol:"USDTTRY", ad:"USDT", basamak:2},
-  {sembol:"TRXTRY",  ad:"TRX",  basamak:3},
+  {sembol:"USDTTRY", ad:"USDT", basamak:2, logo:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#26A17B"/><path fill="#fff" d="M13.31 10.52V9.09h3.43V6.8H7.28v2.29h3.43v1.43c-2.79.13-4.88.68-4.88 1.34 0 .66 2.09 1.21 4.88 1.34v4.58h2.6v-4.58c2.78-.13 4.87-.68 4.87-1.34 0-.66-2.09-1.21-4.87-1.34zm0 2.25c-.07 0-.43.03-1.23.03-.64 0-1.1-.02-1.26-.03-2.48-.11-4.33-.54-4.33-1.06 0-.52 1.85-.95 4.33-1.06v1.7c.16.01.63.04 1.27.04.76 0 1.15-.03 1.22-.04v-1.7c2.47.11 4.32.54 4.32 1.06 0 .52-1.85.95-4.32 1.06z"/></svg>`},
+  {sembol:"TRXTRY",  ad:"TRX",  basamak:3, logo:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#EF0027"/><path fill="#fff" d="M18.2 8.06 5.9 5.8l6.53 14.6 8.57-10.4-2.8-1.94zm-.33 1.3 1.6 1.11-4.46.81 2.86-1.92zM13.02 10.9 7.98 7.5l8.03 1.47-2.99 1.93zm-.41 1.07.93 6.77-4.6-10.3 3.67 3.53zm1.03.35 4.82-.88-4.62 5.6-.2-4.72z"/></svg>`},
 ];
 const TUTARLAR = [5000, 10000, 20000, 25000, 50000, 100000, 150000, 200000];
 const YENILEME_MS = 3000;
@@ -85,7 +89,7 @@ const bicim = (x, b=2) => new Intl.NumberFormat("tr-TR",
 
 document.getElementById("kartlar").innerHTML = PARITELER.map(p => `
   <div class="kart">
-    <div class="ad">${p.ad} / TRY</div>
+    <div class="ad">${p.logo}<span>${p.ad} / TRY</span></div>
     <div class="fiyat" id="f-${p.sembol}">--,--</div>
     <div class="degisim" id="d-${p.sembol}">--</div>
     <div class="kucuk" id="r-${p.sembol}">24s --</div>
@@ -93,7 +97,7 @@ document.getElementById("kartlar").innerHTML = PARITELER.map(p => `
   </div>`).join("");
 
 document.getElementById("baslik").insertAdjacentHTML("beforeend",
-  PARITELER.map(p => `<th>${p.ad}</th>`).join(""));
+  PARITELER.map(p => `<th><span class="bslk">${p.logo}<span>${p.ad}</span></span></th>`).join(""));
 
 document.getElementById("govde").innerHTML = TUTARLAR.map(t => `
   <tr>
