@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="110" fill="#12151c"/>
+  <text x="256" y="238" font-family="Segoe UI,system-ui,sans-serif" font-size="150"
+        font-weight="700" fill="#2ecc71" text-anchor="middle">₺</text>
+  <text x="256" y="360" font-family="Segoe UI,system-ui,sans-serif" font-size="96"
+        font-weight="700" fill="#f5c24a" text-anchor="middle">USDT</text>
+</svg>

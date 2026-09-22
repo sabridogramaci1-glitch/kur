@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USDT &amp; TRX / TRY</title>
+<meta name="theme-color" content="#12151c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kur">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --bg:#12151c; --kart:#1b202b; --cizgi:#262c3a;
+    --yazi:#e8eaf0; --soluk:#8b93a7;
+    --yesil:#2ecc71; --kirmizi:#ff5c5c; --sari:#f5c24a;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--yazi)}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    padding:calc(env(safe-area-inset-top,0px) + 20px) 16px
+            calc(env(safe-area-inset-bottom,0px) + 32px);
+    -webkit-text-size-adjust:100%;
+  }
+  .sar{max-width:720px;margin:0 auto}
+  h1{font-size:12px;letter-spacing:.14em;color:var(--soluk);margin:0 0 14px;font-weight:600}
+  .kartlar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.kartlar{grid-template-columns:1fr;gap:10px}}
+  .kart{background:var(--kart);border-radius:16px;padding:14px 16px}
+  .ad{font-size:12px;font-weight:600;color:var(--soluk);letter-spacing:.04em}
+  .fiyat{font-size:38px;font-weight:700;line-height:1.1;margin:2px 0 0;
+         font-variant-numeric:tabular-nums;transition:color .2s}
+  .degisim{font-size:14px;font-weight:600;margin-top:2px}
+  .kucuk{font-size:11px;color:var(--soluk);margin-top:5px;font-variant-numeric:tabular-nums}
+  .yesil{color:var(--yesil)} .kirmizi{color:var(--kirmizi)} .notr{color:var(--yazi)}
+  h2{font-size:11px;letter-spacing:.14em;color:var(--soluk);margin:22px 0 8px;font-weight:600}
+  table{width:100%;border-collapse:collapse;background:var(--kart);
+        border-radius:16px;overflow:hidden}
+  th{font-size:11px;color:var(--soluk);font-weight:600;text-align:right;padding:12px 16px 6px}
+  th:first-child{text-align:left}
+  td{padding:12px 16px;border-top:1px solid var(--cizgi);font-variant-numeric:tabular-nums}
+  td:first-child{font-size:15px;white-space:nowrap}
+  td:not(:first-child){text-align:right;font-size:16px;font-weight:700;color:var(--sari);
+    font-family:ui-monospace,Consolas,"SF Mono",monospace}
+  tbody tr:first-child td{border-top:none}
+  .alt{display:flex;justify-content:space-between;align-items:center;
+       gap:12px;margin-top:14px;font-size:12px;color:var(--soluk)}
+  .nokta{display:inline-block;width:7px;height:7px;border-radius:50%;
+         background:var(--yesil);margin-right:6px;vertical-align:middle}
+  .kopuk .nokta{background:var(--kirmizi)}
+  .kopuk{color:var(--kirmizi)}
+</style>
+</head>
+<body>
+<div class="sar">
+  <h1>USDT &amp; TRX / TRY &nbsp;·&nbsp; BINANCE</h1>
+  <div class="kartlar" id="kartlar"></div>
+
+  <h2>TL KARSILIGI</h2>
+  <table>
+    <thead><tr id="baslik"><th>Tutar</th></tr></thead>
+    <tbody id="govde"></tbody>
+  </table>
+
+  <div class="alt">
+    <span>3 saniyede bir guncellenir</span>
+    <span id="durum"><span class="nokta"></span>baglaniyor...</span>
+  </div>
+</div>
+
+<script>
+const PARITELER = [
+  {sembol:"USDTTRY", ad:"USDT", basamak:2},
+  {sembol:"TRXTRY",  ad:"TRX",  basamak:3},
+];
+const TUTARLAR = [5000, 10000, 20000, 25000, 50000, 100000, 150000, 200000];
+const YENILEME_MS = 3000;
+
+const bicim = (x, b=2) => new Intl.NumberFormat("tr-TR",
+  {minimumFractionDigits:b, maximumFractionDigits:b}).format(x);
+
+document.getElementById("kartlar").innerHTML = PARITELER.map(p => `
+  <div class="kart">
+    <div class="ad">${p.ad} / TRY</div>
+    <div class="fiyat" id="f-${p.sembol}">--,--</div>
+    <div class="degisim" id="d-${p.sembol}">--</div>
+    <div class="kucuk" id="r-${p.sembol}">24s --</div>
+    <div class="kucuk" id="s-${p.sembol}">alis -- &nbsp;·&nbsp; satis -- &nbsp;·&nbsp; makas --</div>
+  </div>`).join("");
+
+document.getElementById("baslik").insertAdjacentHTML("beforeend",
+  PARITELER.map(p => `<th>${p.ad}</th>`).join(""));
+
+document.getElementById("govde").innerHTML = TUTARLAR.map(t => `
+  <tr>
+    <td>${bicim(t,0)} &#8378;</td>
+    ${PARITELER.map(p => `<td id="t-${p.sembol}-${t}">--</td>`).join("")}
+  </tr>`).join("");
+
+const URL_24 = "https://api.binance.com/api/v3/ticker/24hr?symbols="
+  + encodeURIComponent(JSON.stringify(PARITELER.map(p => p.sembol)));
+
+function ciz(d){
+  const p = PARITELER.find(x => x.sembol === d.symbol);
+  if(!p) return;
+  const b = p.basamak;
+  const fiyat = +d.lastPrice, alis = +d.bidPrice, satis = +d.askPrice, yuzde = +d.priceChangePercent;
+
+  const sinif = yuzde > 0 ? "yesil" : (yuzde < 0 ? "kirmizi" : "notr");
+  const ok    = yuzde > 0 ? "▲" : (yuzde < 0 ? "▼" : "▬");
+
+  const ef = document.getElementById("f-"+p.sembol);
+  ef.textContent = bicim(fiyat, b) + " ₺";
+  ef.className = "fiyat " + sinif;
+
+  const ed = document.getElementById("d-"+p.sembol);
+  ed.textContent = `${ok} %${bicim(Math.abs(yuzde), 2)}`;
+  ed.className = "degisim " + sinif;
+
+  document.getElementById("r-"+p.sembol).textContent =
+    `24s ${bicim(+d.lowPrice, b)} - ${bicim(+d.highPrice, b)}`;
+  document.getElementById("s-"+p.sembol).innerHTML =
+    `alis ${bicim(alis,b)} &nbsp;·&nbsp; satis ${bicim(satis,b)} &nbsp;·&nbsp; makas ${bicim(satis-alis, b+1)}`;
+
+  for(const t of TUTARLAR){
+    document.getElementById(`t-${p.sembol}-${t}`).textContent = bicim(t / fiyat, 2);
+  }
+}
+
+function durum(ok){
+  const e = document.getElementById("durum");
+  const saat = new Date().toLocaleTimeString("tr-TR");
+  e.className = ok ? "" : "kopuk";
+  e.innerHTML = `<span class="nokta"></span>` + (ok ? "guncellendi " : "baglanti yok ") + saat;
+}
+
+async function getir(){
+  try{
+    const c = await fetch(URL_24, {cache:"no-store"});
+    if(!c.ok) throw new Error(c.status);
+    (await c.json()).forEach(ciz);
+    durum(true);
+  }catch(e){
+    durum(false);
+  }
+}
+
+let zamanlayici = null;
+function basla(){
+  getir();
+  clearInterval(zamanlayici);
+  zamanlayici = setInterval(getir, YENILEME_MS);
+}
+function dur(){ clearInterval(zamanlayici); zamanlayici = null; }
+
+// telefonda ekran kapaliyken bos yere istek atmasin
+document.addEventListener("visibilitychange", () =>
+  document.hidden ? dur() : basla());
+basla();
+</script>
+</body>
+</html>
