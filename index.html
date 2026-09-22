@@ -115,7 +115,8 @@ const PARITELER = [
 const TUTARLAR = [5000, 10000, 20000, 25000, 50000, 100000, 150000, 200000];
 const YENILEME_MS = 3000;
 
-const FP_VARSAYILAN = 0.26;   // FulgurPay kurunun Binance ustu farki (%)
+// FulgurPay kurunun Binance ustu farki (%), parite bazinda olculen degerler
+const FP_VARSAYILAN = {USDTTRY: 0.26, TRXTRY: 0.27};
 
 const bicim = (x, b=2) => new Intl.NumberFormat("tr-TR",
   {minimumFractionDigits:b, maximumFractionDigits:b}).format(x);
@@ -163,7 +164,7 @@ document.getElementById("fp-govde").innerHTML = TUTARLAR.map(t => `
 
 for(const p of PARITELER){
   const kutu = document.getElementById("fp-prim-" + p.sembol);
-  let baslangic = FP_VARSAYILAN;
+  let baslangic = FP_VARSAYILAN[p.sembol] ?? 0;
   try{
     const v = localStorage.getItem("fp_prim_" + p.sembol);
     if(v !== null && v !== "") baslangic = parseFloat(v);
